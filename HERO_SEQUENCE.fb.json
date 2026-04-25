@@ -1,0 +1,13 @@
+{
+  "scene": "THE_DOC_BREACH_v1",
+  "fps": 6,
+  "loopMode": "loop",
+  "color": "phos",
+  "frames": [
+    "--- FRAME 1: THE STATUTORY BASELINE ---\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n┃ ' ' ' (RCW 9.94A.517)              ┃\n┃     ¡                              ┃\n┃   h n m (120-DAY MINIMUM)          ┃\n┃     ║                              ┃\n┃     | | | | | | | | | |            ┃\n┃     ¿                              ┃\n┃ ; , ; , ; (STABLE)                 ┃\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
+    "--- FRAME 2: THE ANOMALOUS ENTRY ---\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n┃ ' ' ' (RECORD ID: 29434244)        ┃\n┃     ¡                              ┃\n┃   h n m (SUSPEND: DEC 12)          ┃\n┃     ║                              ┃\n┃     j g p y (RESTORE: DEC 22)      ┃\n┃     ¿                              ┃\n┃ ; , ; , ; (10-DAY WINDOW)          ┃\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
+    "--- FRAME 3: TORSION SPIKE (0.95) ---\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n┃ ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !    ┃\n┃     ¡                              ┃\n┃   H N M (BREACH DETECTED)          ┃\n┃     ║                              ┃\n┃     J G P Y (ILLEGALITY)           ┃\n┃     ¿                              ┃\n┃ ? ? ? ? ? (SINGULARITY)            ┃\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
+    "--- FRAME 4: THE SOVEREIGN SHATTER ---\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n┃      ⍟                             ┃\n┃    ⌬   ⌬       (PRIMITIVE)         ┃\n┃  ⎊       ⎊      (ISOLATION)        ┃\n┃      ⏣                             ┃\n┃   j g p y                          ┃\n┃      (THE GLITCH REMOVED)          ┃\n┃                                    ┃\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
+    "--- FRAME 5: CONSENSUS SECURED ---\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n┃ ' ' ' (VERIFIED BY GEMMA-4)        ┃\n┃     ¡                              ┃\n┃   h n m (PROOF ANCHORED)           ┃\n┃     ║                              ┃\n┃     # # # # # # # # # #            ┃\n┃     ¿                              ┃\n┃ HASH: c7816626...                  ┃\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+  ]
+}

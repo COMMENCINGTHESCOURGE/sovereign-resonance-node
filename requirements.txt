@@ -1,0 +1,7 @@
+numpy
+torch
+transformer
+requests
+websockets
+pydantic
+pytest

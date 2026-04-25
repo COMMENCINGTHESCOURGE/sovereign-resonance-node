@@ -1,0 +1,7 @@
+*.zip
+ARC_DATA/
+.pytest_cache/
+__pycache__/
+*.onnx
+*.jsonl
+*.tmp

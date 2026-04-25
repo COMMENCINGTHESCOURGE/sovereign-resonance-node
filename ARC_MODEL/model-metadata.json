@@ -1,0 +1,9 @@
+{
+    "ownerSlug":  "commencethescourge",
+    "slug":  "sovereign-arc-node",
+    "title":  "Sovereign ARC Node // Logic Sieve",
+    "subtitle":  "A collection of deterministic ONNX models for the ARC-AGI-3 challenge.",
+    "isPrivate":  true,
+    "description":  "This solution is a Level 3 ARC-AGI solver designed to perform structured program induction from input-output grid examples. The model does not use neural network training, but instead builds deterministic transformation programs represented as ONNX computational graphs.",
+    "license":  "Apache 2.0"
+}
