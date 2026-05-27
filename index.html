@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUINEA PIG TRENCH LLC - CONTINUITY ENGINE INTEGRATION</title>
+    <style>
+        :root {
+            --bg-color: #050508;
+            --text-color: #00ffc8;
+            --highlight-color: #ff3c00;
+            --console-bg: #0a111a;
+            --border-color: #1a334d;
+            --font-stack: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-stack);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+            letter-spacing: 2px;
+            text-shadow: 0 0 5px var(--text-color);
+        }
+
+        #main-display {
+            flex: 1;
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        #terrain-monitor {
+            flex: 2;
+            background: #000;
+            border: 2px solid var(--border-color);
+            box-shadow: inset 0 0 15px rgba(0, 255, 200, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #terrain-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .sub-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #resonance-monitor {
+            height: 50%;
+            border: 2px solid var(--border-color);
+            background: #000;
+            position: relative;
+        }
+
+        #resonance-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        #system-console {
+            background-color: var(--console-bg);
+            border: 2px solid var(--border-color);
+            padding: 15px;
+            height: 50%;
+            overflow-y: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #console-log {
+            flex: 1;
+            font-size: 0.9em;
+            line-height: 1.4;
+            color: #d0ffe0;
+        }
+
+        #console-log .log-entry {
+            margin-bottom: 4px;
+        }
+
+        #console-log .status-good { color: var(--text-color); }
+        #console-log .status-warn { color: #ffd700; }
+        #console-log .status-crit { color: var(--highlight-color); font-weight: bold; }
+
+        .scourge-active {
+            color: var(--highlight-color) !important;
+            animation: blink 0.5s infinite alternate;
+        }
+
+        @keyframes blink {
+            from { opacity: 1; }
+            to { opacity: 0.4; }
+        }
+
+        #footer-status {
+            font-size: 0.8em;
+            display: flex;
+            justify-content: space-between;
+            color: #4a6d8c;
+            border-top: 1px solid var(--border-color);
+            padding-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        GUINEA PIG TRENCH LLC - CONTINUITY ENGINE INTEGRATION
+    </header>
+
+    <div id="main-display">
+        <div id="terrain-monitor">
+            <canvas id="terrain-canvas"></canvas>
+        </div>
+
+        <div class="sub-panel">
+            <div id="resonance-monitor">
+                <canvas id="resonance-canvas"></canvas>
+            </div>
+            
+            <div id="system-console">
+                <div id="console-log">
+                    <div class="log-entry status-good">[SYS] Booting Continuity Core v0.9.3... [OK]</div>
+                    <div class="log-entry status-good">[SYS] Initializing Hyperpoly Terrain mesh fabric... [OK]</div>
+                    <div class="log-entry status-good">[SYS] Linking Sovereign Resonance Node... [WAIT]</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-status">
+        <span>STATION ID: GPT-CEI-001</span>
+        <span id="current-cycle">CYCLE: 0000000000</span>
+        <span>LATENCY: 0.00ms</span>
+    </div>
+
+    <script>
+        const terrainCanvas = document.getElementById('terrain-canvas');
+        const ctxT = terrainCanvas.getContext('2d');
+        const resonanceCanvas = document.getElementById('resonance-canvas');
+        const ctxR = resonanceCanvas.getContext('2d');
+        const consoleLog = document.getElementById('console-log');
+        const cycleDisplay = document.getElementById('current-cycle');
+
+        function resize() {
+            terrainCanvas.width = terrainCanvas.parentElement.clientWidth;
+            terrainCanvas.height = terrainCanvas.parentElement.clientHeight;
+            resonanceCanvas.width = resonanceCanvas.parentElement.clientWidth;
+            resonanceCanvas.height = resonanceCanvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function drawTerrain(time) {
+            ctxT.clearRect(0, 0, terrainCanvas.width, terrainCanvas.height);
+            
+            const numStrata = 6;
+            const colors = ['#204a8c', '#5a1e8a', '#c75c31', '#e8e6e3', '#396d3f', '#c9a22a'];
+
+            for (let i = 0; i < numStrata; i++) {
+                ctxT.beginPath();
+                ctxT.fillStyle = colors[i] + '33';
+                const offset = i * (terrainCanvas.height / (numStrata + 2));
+                const frequency = 0.005 + i * 0.002;
+                const amplitude = 30 + i * 15;
+
+                ctxT.moveTo(0, offset + amplitude * Math.sin(time * frequency));
+                for (let x = 0; x < terrainCanvas.width; x += 5) {
+                    const y = offset + amplitude * Math.sin((x * frequency) + time * frequency * 0.5);
+                    ctxT.lineTo(x, y);
+                }
+                ctxT.lineTo(terrainCanvas.width, terrainCanvas.height);
+                ctxT.lineTo(0, terrainCanvas.height);
+                ctxT.closePath();
+                ctxT.fill();
+            }
+
+            const arms = [{x: 0.3 * terrainCanvas.width, y: 0.3 * terrainCanvas.height}, {x: 0.6 * terrainCanvas.width, y: 0.4 * terrainCanvas.height}];
+            ctxT.fillStyle = '#ff660099';
+            arms.forEach(arm => {
+                ctxT.beginPath();
+                ctxT.arc(arm.x, arm.y + Math.sin(time*0.1)*5, 15, 0, Math.PI * 2);
+                ctxT.fill();
+            });
+        }
+
+        function drawResonance(time) {
+            ctxR.clearRect(0, 0, resonanceCanvas.width, resonanceCanvas.height);
+            const cx = resonanceCanvas.width / 2;
+            const cy = resonanceCanvas.height / 2;
+            const radius = 60 + Math.sin(time * 0.05) * 5;
+
+            ctxR.strokeStyle = '#00ffc888';
+            ctxR.lineWidth = 1;
+
+            const numLines = 20;
+            for (let i = 0; i < numLines; i++) {
+                const angle1 = (i / numLines) * Math.PI * 2;
+                const angle2 = ((i + Math.floor(numLines/4)) / numLines) * Math.PI * 2;
+                ctxR.beginPath();
+                ctxR.moveTo(cx + radius * Math.cos(angle1), cy + radius * Math.sin(angle1));
+                ctxR.lineTo(cx + radius * Math.cos(angle2 + time*0.01), cy + radius * Math.sin(angle2 + time*0.01));
+                ctxR.stroke();
+            }
+
+            ctxR.strokeStyle = '#00ffc8';
+            ctxR.lineWidth = 2;
+            ctxR.beginPath();
+            ctxR.arc(cx, cy, radius * 0.3, 0, Math.PI * 2);
+            ctxR.stroke();
+        }
+
+        const statusMessages = [
+            { text: "[NET] Connection to Sovereign Node established.", type: "good" },
+            { text: "[HPT] Hyperpoly Simulation: Cycle [N] started.", type: "good" },
+            { text: "[HPT] Applied Erosion Field [0.035]. Integrity optimal.", type: "good" },
+            { text: "[CE] Continuity Engine synchronizing mesh fabric.", type: "good" },
+            { text: "[HPT] Unhandled feature-preservation boundary condition detected.", type: "warn" },
+            { text: "[CE] Engine [03] throughput at 88%. Compacting field.", type: "warn" },
+            { text: "[SYS] Initializing Trench-Builder protocol.", type: "good" },
+            { text: "[SYS] WARNING: Computational load approaching threshold.", type: "crit" },
+        ];
+
+        let messageIndex = 0;
+        let scourged = false;
+
+        function addConsoleLog() {
+            if (scourged) return;
+
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+
+            const message = statusMessages[messageIndex % statusMessages.length];
+            entry.classList.add(`status-${message.type}`);
+            entry.textContent = message.text;
+            consoleLog.appendChild(entry);
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+            messageIndex++;
+
+            if (messageIndex > 15 && !scourged) {
+                triggerScourge();
+            }
+        }
+
+        function triggerScourge() {
+            scourged = true;
+            const sep = document.createElement('div');
+            sep.textContent = "---------------------------------------------";
+            consoleLog.appendChild(sep);
+
+            const scourgeMsg = document.createElement('div');
+            scourgeMsg.className = 'log-entry scourge-active';
+            scourgeMsg.textContent = ">>> COMMENCING THE SCOURGE.";
+            consoleLog.appendChild(scourgeMsg);
+            
+            const crit = document.createElement('div');
+            crit.className = 'log-entry status-crit';
+            crit.textContent = "[CRITICAL] FIELD COLLAPSE IMMINENT. NON-EUCLIDEAN PROJECTION OVERFLOW.";
+            consoleLog.appendChild(crit);
+            
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+
+        let frameCount = 0;
+        function animate() {
+            const time = performance.now();
+            drawTerrain(time * 0.1);
+            drawResonance(time * 0.1);
+            
+            frameCount++;
+            cycleDisplay.textContent = `CYCLE: ${String(frameCount).padStart(10, '0')}`;
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+        setInterval(addConsoleLog, 1800);
+    </script>
+</body>
+</html>

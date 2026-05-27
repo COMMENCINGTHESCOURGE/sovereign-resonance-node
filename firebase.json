@@ -14,7 +14,7 @@
     "rewrites": [
       {
         "source": "**",
-        "destination": "/planet_avatar.html"
+        "destination": "/index.html"
       }
     ],
     "headers": [

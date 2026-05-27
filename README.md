@@ -14,6 +14,7 @@ The sovereign resonance node is the **aesthetic layer** — it renders what the 
 
 | File | Purpose |
 |------|---------|
+| `index.html` | **Default landing page** — System operations dashboard with terrain strata visualization, resonance node network, and live console log |
 | `planet_avatar.html` | Three.js WebGL globe with HUD panels — ARC solver metrics, system telemetry, pipeline timeline, event log |
 | `firebase.json` | Firebase Hosting + Firestore deployment config |
 | `firestore.rules` | Security rules (public read, admin write for pipeline data) |
