@@ -11,6 +11,8 @@ export interface BBox {
 
 export class LiveGeospatialStream {
     private activeInterval: any = null;
+    private lastRequestTime: number = 0;
+    private readonly RATE_LIMIT_MS: number = 60000; // Max 1 request per minute
 
     /**
      * Establishes a live streaming connection to Earth Observation APIs (e.g. Earth Engine / Copernicus).
@@ -22,13 +24,20 @@ export class LiveGeospatialStream {
         
         // Mocking the data polling for scaffolding
         this.activeInterval = setInterval(() => {
+            const now = Date.now();
+            if (now - this.lastRequestTime < this.RATE_LIMIT_MS) {
+                console.warn(`[EarthEngineStream] Rate limit enforced. Skipping API request.`);
+                return;
+            }
+            this.lastRequestTime = now;
+
             console.log(`[EarthEngineStream] Received telemetry update (e.g., NDVI shift due to season).`);
             
             // Simulating an organic/water shift based on real weather data
             const updatedTensor = new MaterialTensor({ resolution: 512, channels: [] }); // Mock
             
             callback(updatedTensor);
-        }, 60000); // 60 seconds mock interval
+        }, 30000); // Poll every 30s, but rate limited to 60s
 
         return () => {
             if (this.activeInterval) clearInterval(this.activeInterval);
