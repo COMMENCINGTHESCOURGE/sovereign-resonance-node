@@ -1,0 +1,33 @@
+name: 🐛 Bug Report (HUD/Telemetry)
+description: Report a bug in the planetary avatar or UI overlay.
+title: "[Bug]: <Short description>"
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Telemetry bugs usually manifest as desynced data, DOM memory leaks, or shader compilation failures on the avatar.
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Browser, GPU model
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What went wrong with the HUD or Avatar?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console Logs
+      render: shell
+    validations:
+      required: false
