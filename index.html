@@ -154,7 +154,9 @@
         <span>LATENCY: 0.00ms</span>
     </div>
 
-    <script>
+    <script type="module">
+        import { BridgeClient, channelsToTerrainParams, ratioToEQ, vinculumBind, WORLD_TENSOR_MAP } from './bridge-client.js';
+
         const terrainCanvas = document.getElementById('terrain-canvas');
         const ctxT = terrainCanvas.getContext('2d');
         const resonanceCanvas = document.getElementById('resonance-canvas');
@@ -171,18 +173,80 @@
         window.addEventListener('resize', resize);
         resize();
 
+        // ── VINCULUM STATE — live channels from bridge ──
+        let activeChannels = { density: 0.5, cohesion: 0.5, permeability: 0.5, water: 0.3, sediment: 0.1, oxidation: 0.1 };
+        let activeMetrics  = { bound_ratio: 0.5, vinculum_ratio: 'undetermined' };
+        let activeSubstrate = 'terrain';
+        let terrainParams = channelsToTerrainParams(activeChannels);
+        let eqGains = ratioToEQ(0.5);
+
+        // ── BRIDGE CLIENT — wires vinculum into render loop ──
+        const bridge = new BridgeClient({ world: 'the_between', seed: 113 });
+        bridge.onUpdate((channels, metrics, substrate) => {
+            if (substrate === 'terrain') {
+                activeChannels = channels;
+                terrainParams = channelsToTerrainParams(channels);
+            }
+            if (substrate === 'integer') {
+                eqGains = ratioToEQ(metrics.bound_ratio);
+            }
+            activeMetrics = metrics;
+            activeSubstrate = substrate;
+
+            // Log vinculum events to console
+            logVinculumEvent(substrate, metrics);
+        });
+        bridge.start();
+
+        // ── STRATA COLORS — hue-shifted by oxidation channel ──
+        const BASE_COLORS = [
+            [32, 74, 140],   // deep blue
+            [90, 30, 138],   // violet
+            [199, 92, 49],   // terracotta
+            [232, 230, 227], // bone
+            [57, 109, 63],   // forest
+            [201, 162, 42],  // gold
+            [40, 120, 160],  // teal
+            [180, 40, 80],   // crimson
+            [60, 60, 100],   // slate
+            [140, 180, 60],  // lime
+        ];
+
+        function hueShift(r, g, b, degrees) {
+            const rad = degrees * Math.PI / 180;
+            const cos = Math.cos(rad);
+            const sin = Math.sin(rad);
+            const nr = r * (0.299 + 0.701 * cos + 0.168 * sin) +
+                       g * (0.587 - 0.587 * cos + 0.330 * sin) +
+                       b * (0.114 - 0.114 * cos - 0.497 * sin);
+            const ng = r * (0.299 - 0.299 * cos - 0.328 * sin) +
+                       g * (0.587 + 0.413 * cos + 0.035 * sin) +
+                       b * (0.114 - 0.114 * cos + 0.292 * sin);
+            const nb = r * (0.299 - 0.300 * cos + 1.250 * sin) +
+                       g * (0.587 - 0.588 * cos - 1.050 * sin) +
+                       b * (0.114 + 0.886 * cos - 0.203 * sin);
+            return [Math.round(Math.max(0, Math.min(255, nr))),
+                    Math.round(Math.max(0, Math.min(255, ng))),
+                    Math.round(Math.max(0, Math.min(255, nb)))];
+        }
+
         function drawTerrain(time) {
             ctxT.clearRect(0, 0, terrainCanvas.width, terrainCanvas.height);
-            
-            const numStrata = 6;
-            const colors = ['#204a8c', '#5a1e8a', '#c75c31', '#e8e6e3', '#396d3f', '#c9a22a'];
+
+            // Vinculum-driven strata: count, amplitude, frequency, hue from channels
+            const numStrata = terrainParams.numStrata;
+            const baseAmp = terrainParams.amplitude;
+            const baseFreq = terrainParams.frequency;
+            const hueShiftDeg = terrainParams.oxidationHue;
+            const erosion = terrainParams.erosionRate;
 
             for (let i = 0; i < numStrata; i++) {
+                const [cr, cg, cb] = hueShift(...BASE_COLORS[i % BASE_COLORS.length], hueShiftDeg);
                 ctxT.beginPath();
-                ctxT.fillStyle = colors[i] + '33';
+                ctxT.fillStyle = `rgba(${cr},${cg},${cb},0.2)`;
                 const offset = i * (terrainCanvas.height / (numStrata + 2));
-                const frequency = 0.005 + i * 0.002;
-                const amplitude = 30 + i * 15;
+                const frequency = baseFreq + i * 0.002;
+                const amplitude = baseAmp + i * (15 - erosion * 200);
 
                 ctxT.moveTo(0, offset + amplitude * Math.sin(time * frequency));
                 for (let x = 0; x < terrainCanvas.width; x += 5) {
@@ -195,11 +259,18 @@
                 ctxT.fill();
             }
 
-            const arms = [{x: 0.3 * terrainCanvas.width, y: 0.3 * terrainCanvas.height}, {x: 0.6 * terrainCanvas.width, y: 0.4 * terrainCanvas.height}];
-            ctxT.fillStyle = '#ff660099';
+            // Wet-front markers — position scaled by water + permeability
+            const waterLevel = activeChannels.water;
+            const permFlow = activeChannels.permeability;
+            const arms = [
+                {x: (0.2 + waterLevel * 0.2) * terrainCanvas.width,  y: (0.2 + permFlow * 0.2) * terrainCanvas.height},
+                {x: (0.5 + waterLevel * 0.2) * terrainCanvas.width,  y: (0.3 + permFlow * 0.2) * terrainCanvas.height}
+            ];
+            ctxT.fillStyle = `rgba(255, 102, 0, ${0.3 + waterLevel * 0.4})`;
             arms.forEach(arm => {
                 ctxT.beginPath();
-                ctxT.arc(arm.x, arm.y + Math.sin(time*0.1)*5, 15, 0, Math.PI * 2);
+                const radius = 10 + waterLevel * 15;
+                ctxT.arc(arm.x, arm.y + Math.sin(time*0.1)*5, radius, 0, Math.PI * 2);
                 ctxT.fill();
             });
         }
@@ -208,59 +279,98 @@
             ctxR.clearRect(0, 0, resonanceCanvas.width, resonanceCanvas.height);
             const cx = resonanceCanvas.width / 2;
             const cy = resonanceCanvas.height / 2;
-            const radius = 60 + Math.sin(time * 0.05) * 5;
 
-            ctxR.strokeStyle = '#00ffc888';
-            ctxR.lineWidth = 1;
+            // Radius pulses with bound_ratio
+            const ratio = activeMetrics.bound_ratio || 0.5;
+            const radius = 50 + ratio * 30 + Math.sin(time * 0.05) * 5;
 
-            const numLines = 20;
+            // EQ-driven line colors (5 bands → 5 color intensities)
+            const lineColors = eqGains.map((g, i) => {
+                const hue = 160 + i * 20; // cyan → green range
+                const light = 40 + g * 40;
+                return `hsl(${hue}, 70%, ${light}%)`;
+            });
+
+            // Draw resonance pattern — vinculum binding visualization
+            const numLines = 20 + Math.round(activeChannels.cohesion * 15);
             for (let i = 0; i < numLines; i++) {
                 const angle1 = (i / numLines) * Math.PI * 2;
-                const angle2 = ((i + Math.floor(numLines/4)) / numLines) * Math.PI * 2;
+                const angle2 = ((i + Math.floor(numLines / 4)) / numLines) * Math.PI * 2;
+                ctxR.strokeStyle = lineColors[i % lineColors.length];
+                ctxR.lineWidth = 0.5 + ratio;
                 ctxR.beginPath();
                 ctxR.moveTo(cx + radius * Math.cos(angle1), cy + radius * Math.sin(angle1));
-                ctxR.lineTo(cx + radius * Math.cos(angle2 + time*0.01), cy + radius * Math.sin(angle2 + time*0.01));
+                ctxR.lineTo(cx + radius * Math.cos(angle2 + time * 0.01), cy + radius * Math.sin(angle2 + time * 0.01));
                 ctxR.stroke();
             }
 
-            ctxR.strokeStyle = '#00ffc8';
-            ctxR.lineWidth = 2;
+            // Core ring — size reflects partition completeness
+            const coreRadius = radius * (0.2 + (activeMetrics.partition_completeness || 0.5) * 0.15);
+            ctxR.strokeStyle = `hsl(160, 80%, ${50 + ratio * 30}%)`;
+            ctxR.lineWidth = 1.5 + ratio;
             ctxR.beginPath();
-            ctxR.arc(cx, cy, radius * 0.3, 0, Math.PI * 2);
+            ctxR.arc(cx, cy, coreRadius, 0, Math.PI * 2);
             ctxR.stroke();
+
+            // Ratio label
+            ctxR.fillStyle = '#00ffc866';
+            ctxR.font = '9px Courier New';
+            ctxR.textAlign = 'center';
+            ctxR.fillText(`${activeMetrics.vinculum_ratio || '—'} | ${(ratio).toFixed(4)}`, cx, cy + coreRadius + 14);
         }
 
-        const statusMessages = [
-            { text: "[NET] Connection to Sovereign Node established.", type: "good" },
-            { text: "[HPT] Hyperpoly Simulation: Cycle [N] started.", type: "good" },
-            { text: "[HPT] Applied Erosion Field [0.035]. Integrity optimal.", type: "good" },
-            { text: "[CE] Continuity Engine synchronizing mesh fabric.", type: "good" },
-            { text: "[HPT] Unhandled feature-preservation boundary condition detected.", type: "warn" },
-            { text: "[CE] Engine [03] throughput at 88%. Compacting field.", type: "warn" },
-            { text: "[SYS] Initializing Trench-Builder protocol.", type: "good" },
-            { text: "[SYS] WARNING: Computational load approaching threshold.", type: "crit" },
-        ];
-
+        // ── VINCULUM CONSOLE — replaces static messages ──
         let messageIndex = 0;
         let scourged = false;
 
-        function addConsoleLog() {
+        function logVinculumEvent(substrate, metrics) {
             if (scourged) return;
-
             const entry = document.createElement('div');
             entry.className = 'log-entry';
 
-            const message = statusMessages[messageIndex % statusMessages.length];
-            entry.classList.add(`status-${message.type}`);
-            entry.textContent = message.text;
+            const ratio = (metrics.bound_ratio || 0).toFixed(6);
+            const label = metrics.vinculum_ratio || '?';
+
+            if (substrate === 'terrain') {
+                entry.classList.add('status-good');
+                entry.textContent = `[HPT] Vinculum terrain bind: ${label} → ${ratio}`;
+            } else if (substrate === 'integer') {
+                const isAnomaly = metrics.bound_ratio < 0.01;
+                entry.classList.add(isAnomaly ? 'status-crit' : 'status-good');
+                entry.textContent = `[ES] Sieve stride-24 bind: ${label} → ${ratio}${isAnomaly ? ' ⚠ LOW' : ''}`;
+            } else if (substrate === 'infrastructure') {
+                entry.classList.add('status-warn');
+                entry.textContent = `[SYS] Infrastructure bind: ${label} → ${ratio}`;
+            }
+
             consoleLog.appendChild(entry);
             consoleLog.scrollTop = consoleLog.scrollHeight;
             messageIndex++;
 
-            if (messageIndex > 15 && !scourged) {
+            // Preserve the scourge sequence
+            if (messageIndex > 30 && !scourged) {
                 triggerScourge();
             }
         }
+
+        // Initial boot messages
+        const bootMessages = [
+            { text: "[SYS] Booting Continuity Core v0.9.3... [OK]", type: "good" },
+            { text: "[SYS] Initializing Hyperpoly Terrain mesh fabric... [OK]", type: "good" },
+            { text: "[SYS] Linking Sovereign Resonance Node... [WAIT]", type: "good" },
+            { text: "[BRIDGE] Vinculum binding operator engaged.", type: "good" },
+            { text: `[BRIDGE] Mode: ${bridge.mode.toUpperCase()} — polling every ${bridge.pollInterval}ms`, type: "good" },
+        ];
+
+        bootMessages.forEach((msg, i) => {
+            setTimeout(() => {
+                const entry = document.createElement('div');
+                entry.className = `log-entry status-${msg.type}`;
+                entry.textContent = msg.text;
+                consoleLog.appendChild(entry);
+                consoleLog.scrollTop = consoleLog.scrollHeight;
+            }, i * 400);
+        });
 
         function triggerScourge() {
             scourged = true;
@@ -272,12 +382,12 @@
             scourgeMsg.className = 'log-entry scourge-active';
             scourgeMsg.textContent = ">>> COMMENCING THE SCOURGE.";
             consoleLog.appendChild(scourgeMsg);
-            
+
             const crit = document.createElement('div');
             crit.className = 'log-entry status-crit';
             crit.textContent = "[CRITICAL] FIELD COLLAPSE IMMINENT. NON-EUCLIDEAN PROJECTION OVERFLOW.";
             consoleLog.appendChild(crit);
-            
+
             consoleLog.scrollTop = consoleLog.scrollHeight;
         }
 
@@ -286,7 +396,7 @@
             const time = performance.now();
             drawTerrain(time * 0.1);
             drawResonance(time * 0.1);
-            
+
             frameCount++;
             cycleDisplay.textContent = `CYCLE: ${String(frameCount).padStart(10, '0')}`;
 
@@ -294,7 +404,6 @@
         }
 
         animate();
-        setInterval(addConsoleLog, 1800);
     </script>
 </body>
 </html>
