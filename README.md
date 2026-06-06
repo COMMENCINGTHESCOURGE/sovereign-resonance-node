@@ -1,84 +1,83 @@
 # sovereign-resonance-node
 
-**Part of the MANIFOLD field computation system.**
-**Copyright (c) 2026 Guinea Pig Trench LLC**
+> The telemetry HUD and planetary avatar for the MANIFOLD ecosystem.
+
+[![WebGL](https://img.shields.io/badge/WebGL-enabled-blue)](https://www.khronos.org/webgl/)
+[![WebRTC](https://img.shields.io/badge/WebRTC-Swarm-black.svg)](https://webrtc.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**sovereign-resonance-node** serves as the omniscient telemetry layer for the MANIFOLD continuity engine. While `hyperpoly-terrain` calculates the field physics and `trench-builder` streams the open world, this node projects the ecosystem's health, Swarm coordination, and planetary-scale topological shifts (like Thermodynamic Subduction) onto a high-fidelity WebGL interface.
 
 ---
 
-**Integration surface for the MANIFOLD architecture.**
-WebGL planet avatar with live pipeline HUD, Firestore-backed pipeline status, and non-Euclidean visualization projections.
+## 🌍 The Observer Philosophy
 
-The sovereign resonance node is the **aesthetic layer** — it renders what the field computes. It reads pipeline status from Firestore and displays adversarial development progress in real time.
+A living simulation requires a living interface. Traditional diagnostic tools are sterile graphs. The `sovereign-resonance-node` acts as an orbital surveyor. It connects to the MANIFOLD signaling server, pulling real-time metadata from distributed Swarm meshes, and projects that data over a WebGL planetary avatar.
 
-## Contents
+When two Swarm grids collide and merge in the physics layer, this node visualizes the tectonic shockwaves. 
 
-| File | Purpose |
-|------|---------|
-| `index.html` | **Default landing page** — System operations dashboard with terrain strata visualization, resonance node network, and live console log |
-| `planet_avatar.html` | Three.js WebGL globe with HUD panels — ARC solver metrics, system telemetry, pipeline timeline, event log |
-| `firebase.json` | Firebase Hosting + Firestore deployment config |
-| `firestore.rules` | Security rules (public read, admin write for pipeline data) |
-| `firestore.indexes.json` | Firestore index config |
-| `trenchOS_engine.py` | TrenchOS v2.5 core — Levenshtein cache + typing engine with history persistence |
-| `SOVEREIGN_BATCH_SOLVER.py` | ARC-AGI batch solver — Gemma 4 via Ollama, program synthesis + exec verification |
-| `batch_excavator_v4.py` | ARC task classifier — routes puzzles to TILING / RECOLORING / OBJECT_MOVE |
-| `ARC_ONNX_GENERATOR.py` | ONNX model export for ARC task submission |
-| `ARC_ONNX_GENERATOR_V3.py` | Scaled ONNX generator — 400 model artifacts |
-| `HERO_SEQUENCE.fb.json` | Frame-by-frame flipbook — 5-panel statutory breach detection narrative |
-| `task_00dbd492.json` | Sample ARC puzzle (004 page — object isolation) |
-| `test_trenchOS_engine.py` | Pytest suite for engine history and case insensitivity |
-| `FINAL_WRITEUP_SUBMISSION.md` | Gemma 4 Good hackathon writeup — track: Digital Equity & Inclusivity |
-| `GEMMA_4_GOOD_WRITEUP.md` | Abridged hackathon narrative |
+---
 
-## Quick Start
+## 🖼️ Visual Onboarding
+
+*(Placeholders — replace with actual assets)*
+
+| Visual | Purpose | Status |
+|--------|---------|--------|
+| ![Planet Avatar](./docs/assets/planet-avatar.gif) | Real-time WebGL rendering of the global mesh | 🟡 TODO |
+| ![Telemetry HUD](./docs/assets/telemetry-hud.png) | Floating UI logging Swarm trust scores and worker counts | 🟡 TODO |
+| ![Subduction Metrics](./docs/assets/subduction-metrics.svg) | Thermodynamic Subduction CRDT conflict graph | 🟡 TODO |
+
+> 💡 **Contributor opportunity**: Help capture these! See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+---
+
+## 🚀 Quickstart
+
+**Requirements**:
+- WebGL 2.0 / WebGPU capable browser
+- Node.js 18+
 
 ```bash
-# Clone and open the visualization
 git clone https://github.com/COMMENCINGTHESCOURGE/sovereign-resonance-node.git
 cd sovereign-resonance-node
-# Open planet_avatar.html in a browser with WebGPU support
-# Or deploy to Firebase:
-#   firebase login
-#   firebase deploy --only hosting
+npm install && npm run dev
 ```
 
-The planet avatar runs in two modes:
-- **Demo mode** (default) — simulated ARC solver metrics with live drift, timeline progression, and random events
-- **Live mode** — connects to Firestore (`pipeline_status/current`, `goal_status/*`, `events/*`) for real pipeline telemetry
+Open `http://localhost:8080`.
 
-To enable live mode, update the `FIREBASE_CONFIG` in `planet_avatar.html` with your Firebase project credentials.
+### 🔧 Quick Controls
+- `T` — Toggle telemetry overlay
+- `M` — Show global mesh topology
+- `Mouse drag` — Rotate orbital avatar
 
-## Architecture
+---
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    SOVEREIGN RESONANCE NODE                  │
-│                                                             │
-│  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐ │
-│  │ ARC      │   │ System   │   │ Pipeline │   │ Event    │ │
-│  │ Solver   │   │ Telemetry│   │ Timeline │   │ Log      │ │
-│  │ HUD      │   │ HUD      │   │ HUD      │   │ HUD      │ │
-│  └────┬─────┘   └────┬─────┘   └────┬─────┘   └────┬─────┘ │
-│       └──────────────┼──────────────┼──────────────┘       │
-│                      ▼              ▼                       │
-│              ┌────────────────────────────┐                 │
-│              │     Three.js WebGL Globe    │                 │
-│              │  (orbit nodes, connections, │                 │
-│              │   particle field, rings)    │                 │
-│              └────────────┬───────────────┘                 │
-│                           │                                 │
-│              ┌────────────▼───────────────┐                 │
-│              │      Firestore / Demo       │                 │
-│              │    (pipeline_status,        │                 │
-│              │     goal_status, events)    │                 │
-│              └────────────────────────────┘                 │
-└─────────────────────────────────────────────────────────────┘
-```
+## 🧠 Core Concepts
 
-## Entity
+### The Planetary Avatar
+Instead of standard charts, simulation mass and trust variables are mapped to the visual properties (glow, displacement, chromatic aberration) of a central 3D planetary mesh.
 
-| Field | Value |
-|-------|-------|
-| Copyright | Guinea Pig Trench LLC |
-| R&D Entity | Guinea Pig Trench LLC (PA, #13674084) |
-| Credit Facility | Truth Holds Enterprise (PA, #7049023) |
+### Thermodynamic Subduction
+When isolated terrains (`hyperpoly-terrain` instances) discover each other via WebRTC, they merge. If bounding boxes overlap, the system triggers "Subduction"—crushing excess mass into the Z-axis to form mountains. This node visualizes and audits those CRDT collisions to ensure perfect mass conservation.
+
+### Swarm Orchestration
+Hooks into `SwarmOrchestrator.ts` to log parallel inference rates of the `VoidWalkerAI`.
+
+---
+
+## 🤝 Contribute
+
+Are you a UI engineer who prefers cyberpunk telemetry over standard React dashboards? See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+**Good first issues**:
+- [ ] Render Thermodynamic Subduction events in the HUD
+- [ ] Connect WebRTC lag-compensation metrics to UI latency alerts
+- [ ] Migrate planet rendering from WebGL to WebGPU to match the engine
+
+---
+
+## 📜 License & Ecosystem
+
+MIT © 2026 DaShawn McLaughlin / Guinea Pig Trench LLC  
+Part of the **MANIFOLD** ecosystem.

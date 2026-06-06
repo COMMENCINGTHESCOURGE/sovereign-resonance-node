@@ -1,0 +1,27 @@
+name: ✨ Feature Request (Telemetry/HUD)
+description: Propose a new visualization, HUD metric, or telemetry hook.
+title: "[Feature]: <Short description>"
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before proposing a feature, please ensure it aligns with the MANIFOLD observer principles:
+        - Does it maintain the diegetic / deep-tech aesthetic?
+        - Is it performance-conscious (non-blocking DOM updates)?
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Feature Proposal
+      description: What new visualization do you want to add?
+    validations:
+      required: true
+
+  - type: textarea
+    id: data_source
+    attributes:
+      label: Data Source
+      description: Where does the HUD get this data? (e.g., WebRTC signaling server, hyperpoly-terrain buffer)
+    validations:
+      required: true
