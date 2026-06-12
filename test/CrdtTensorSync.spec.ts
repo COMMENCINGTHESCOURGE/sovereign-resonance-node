@@ -29,4 +29,23 @@ describe('MaterialTensorCRDT Mass Conservation', () => {
         expect(snapshot.sand).to.equal(150);
         expect(snapshot.rock + snapshot.sand).to.equal(0); // Net mass delta is exactly 0
     });
+
+    it('should compact document history without losing the current counter values', () => {
+        const node = new MaterialTensorCRDT();
+        node.applyFlux('rock', -100);
+        node.applyFlux('sand', 100);
+        
+        // Ensure state before compaction is correct
+        expect(node.toSnapshot().rock).to.equal(-100);
+        
+        // Execute compaction
+        node.compact();
+        
+        // Ensure values are fully preserved post-compaction
+        const snapshot = node.toSnapshot();
+        expect(snapshot.rock).to.equal(-100);
+        expect(snapshot.sand).to.equal(100);
+        expect(snapshot.rock + snapshot.sand).to.equal(0);
+    });
 });
+

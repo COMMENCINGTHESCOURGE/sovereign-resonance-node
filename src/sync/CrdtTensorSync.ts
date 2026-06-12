@@ -15,6 +15,8 @@ export interface TensorState {
 export class MaterialTensorCRDT {
     private doc: Automerge.Doc<TensorState>;
 
+    private changeCount = 0;
+
     constructor(initialState?: Automerge.Doc<TensorState>) {
         if (initialState) {
             this.doc = initialState;
@@ -31,6 +33,23 @@ export class MaterialTensorCRDT {
     }
 
     /**
+     * Compacts the Automerge document history to free memory tombstones.
+     */
+    compact(): void {
+        const snapshot = this.toSnapshot();
+        this.doc = Automerge.from({
+            rock: new Automerge.Counter(snapshot.rock),
+            soil: new Automerge.Counter(snapshot.soil),
+            sand: new Automerge.Counter(snapshot.sand),
+            water: new Automerge.Counter(snapshot.water),
+            ice: new Automerge.Counter(snapshot.ice),
+            organic: new Automerge.Counter(snapshot.organic)
+        });
+        this.changeCount = 0;
+        console.log("[CRDT] Document history compacted. Tombstones pruned.");
+    }
+
+    /**
      * Applies an erosion or deposition event to the tensor state.
      * Uses Automerge Counters to ensure that concurrent updates from multiple clients 
      * are strictly commutative, preserving mass-balance across the network.
@@ -39,6 +58,10 @@ export class MaterialTensorCRDT {
         this.doc = Automerge.change(this.doc, 'Apply flux', doc => {
             doc[channel].increment(delta);
         });
+        this.changeCount++;
+        if (this.changeCount >= 100) {
+            this.compact();
+        }
     }
 
     /**
@@ -47,6 +70,10 @@ export class MaterialTensorCRDT {
     merge(remoteDoc: Automerge.Doc<TensorState>): void {
         this.doc = Automerge.merge(this.doc, remoteDoc);
         console.log("[CRDT] Successfully merged remote tensor state. Mass conserved.");
+        this.changeCount++;
+        if (this.changeCount >= 100) {
+            this.compact();
+        }
     }
 
     toSnapshot(): any {
@@ -60,3 +87,4 @@ export class MaterialTensorCRDT {
         };
     }
 }
+
