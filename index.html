@@ -124,8 +124,16 @@
     </style>
 </head>
 <body>
-    <header>
-        GUINEA PIG TRENCH LLC - CONTINUITY ENGINE INTEGRATION
+    <header style="display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box;">
+        <span>GUINEA PIG TRENCH LLC - CONTINUITY ENGINE INTEGRATION</span>
+        <div style="font-size: 0.7em; display: flex; gap: 8px; align-items: center; border-left: 1px solid var(--border-color); padding-left: 15px;">
+            <label for="mode-select" style="color: var(--text-color); letter-spacing: 1px; font-weight: bold;">SUBSTRATE MODE:</label>
+            <select id="mode-select" style="background: #000; color: var(--text-color); border: 1px solid var(--border-color); font-family: var(--font-stack); font-size: 1.0em; padding: 2px 6px; outline: none; cursor: pointer; border-radius: 2px;">
+                <option value="seed">SEED (DEMO)</option>
+                <option value="local">LOCAL (FILE)</option>
+                <option value="firebase">FIREBASE (CLOUD)</option>
+            </select>
+        </div>
     </header>
 
     <div id="main-display">
@@ -163,6 +171,7 @@
         const ctxR = resonanceCanvas.getContext('2d');
         const consoleLog = document.getElementById('console-log');
         const cycleDisplay = document.getElementById('current-cycle');
+        const modeSelect = document.getElementById('mode-select');
 
         function resize() {
             terrainCanvas.width = terrainCanvas.parentElement.clientWidth;
@@ -182,7 +191,21 @@
 
         // ── BRIDGE CLIENT — wires vinculum into render loop ──
         const bridge = new BridgeClient({ world: 'the_between', seed: 113 });
+        
+        modeSelect.addEventListener('change', async (e) => {
+            const newMode = e.target.value;
+            await bridge.setMode(newMode);
+            const entry = document.createElement('div');
+            entry.className = 'log-entry status-warn';
+            entry.textContent = `[SYS] Switching vinculum mode to ${newMode.toUpperCase()}...`;
+            consoleLog.appendChild(entry);
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        });
+
         bridge.onUpdate((channels, metrics, substrate) => {
+            if (modeSelect.value !== bridge.mode) {
+                modeSelect.value = bridge.mode;
+            }
             if (substrate === 'terrain') {
                 activeChannels = channels;
                 terrainParams = channelsToTerrainParams(channels);

@@ -85,11 +85,12 @@ export class BridgeClient {
     this.bridgeBase   = opts.bridgeBase || '/.bridge/topics/vinculum';
     this.substrates   = opts.substrates || ['terrain', 'integer', 'infrastructure'];
     this.fallbackSeed = opts.seed || 113;
-    this.mode         = 'seed'; // 'local' | 'seed' | 'firebase'
+    this.mode         = opts.mode || 'seed'; // 'local' | 'seed' | 'firebase'
     this._callbacks   = [];
     this._timer       = null;
     this._state       = {};
     this._activeWorld = opts.world || 'the_between';
+    this._firestoreUnsubscribe = null;
   }
 
   /** Register a callback: fn(channels, metrics, substrate) */
@@ -115,8 +116,18 @@ export class BridgeClient {
     }
   }
 
-  /** Start polling / seeding */
-  start() {
+  /** Start polling / seeding / Firebase subscription */
+  async start() {
+    if (this.mode === 'firebase') {
+      const fbInitialized = await this._initFirebase();
+      if (fbInitialized) {
+        console.log('[BRIDGE] Mode: FIREBASE — Listening to Firestore pipeline_status/current');
+        return;
+      } else {
+        console.warn('[BRIDGE] Firebase initialization failed. Falling back to local/seed...');
+      }
+    }
+
     // Try local bridge first, fall back to seed mode
     this._tryLocalBridge().then(available => {
       if (available) {
@@ -132,10 +143,67 @@ export class BridgeClient {
     });
   }
 
-  /** Stop polling */
+  /** Stop active polling/listeners */
   stop() {
-    if (this._timer) clearInterval(this._timer);
+    if (this._timer) {
+      clearTimeout(this._timer);
+      clearInterval(this._timer);
+    }
     this._timer = null;
+    if (this._firestoreUnsubscribe) {
+      this._firestoreUnsubscribe();
+      this._firestoreUnsubscribe = null;
+      console.log('[BRIDGE] Firestore listener unsubscribed.');
+    }
+  }
+
+  /** Dynamically switch operational mode */
+  async setMode(newMode) {
+    if (this.mode === newMode) return;
+    console.log(`[BRIDGE] Switching mode: ${this.mode.toUpperCase()} ➔ ${newMode.toUpperCase()}`);
+    this.stop();
+    this.mode = newMode;
+    await this.start();
+  }
+
+  /** Dynamically import Firebase SDK and listen for real-time changes */
+  async _initFirebase() {
+    try {
+      const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+      const { getFirestore, doc, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      
+      const config = {
+        apiKey: "AIzaSyAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        authDomain: "project-1bd6ead8-e0a2-4ecd-96d.firebaseapp.com",
+        projectId: "project-1bd6ead8-e0a2-4ecd-96d",
+        storageBucket: "project-1bd6ead8-e0a2-4ecd-96d.firebasestorage.app",
+        messagingSenderId: "446688573178",
+        appId: "1:446688573178:web:0000000000000000"
+      };
+
+      const app = initializeApp(config);
+      const db = getFirestore(app);
+      const pipeRef = doc(db, 'pipeline_status', 'current');
+      
+      this._firestoreUnsubscribe = onSnapshot(pipeRef, (snap) => {
+        if (snap.exists()) {
+          const d = snap.data();
+          if (d.vinculum) {
+            const v = d.vinculum;
+            const sub = v.substrate;
+            // Parse Firestore fields appropriately
+            this._state[sub] = v;
+            this._emit(v.channels, v.metrics, sub);
+          }
+        }
+      }, (err) => {
+        console.warn('[BRIDGE] Firestore listener failed:', err);
+      });
+      return true;
+    } catch (e) {
+      console.warn('[BRIDGE] Failed to initialize Firebase connection:', e);
+      return false;
+    }
   }
 
   // ── Internal ──

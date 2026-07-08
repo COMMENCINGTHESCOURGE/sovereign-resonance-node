@@ -2,9 +2,16 @@ import json
 import requests
 import os
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-DATASET_PATH = r"C:\Users\dasha\KAGGLE_ARC_DATASET.jsonl"
-LOG_DIR = r"C:\Users\dasha\KAGGLE_AUDIT_LOGS"
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+
+# Check environment for ASUS network IP broadcast or default to localhost
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "localhost")
+OLLAMA_URL = f"http://{OLLAMA_HOST}:11434/api/generate"
+
+DATASET_PATH = os.environ.get("ARC_DATASET_PATH", str(BASE_DIR / "KAGGLE_ARC_DATASET.jsonl"))
+LOG_DIR = os.environ.get("ARC_LOG_DIR", str(BASE_DIR / "KAGGLE_AUDIT_LOGS"))
 
 def classify_task(task_id, frames):
     prompt = f"ARC Task {task_id}. Analyze the pattern. Is it TILING, RECOLORING, or OBJECT_MOVE? Respond with ONE word."

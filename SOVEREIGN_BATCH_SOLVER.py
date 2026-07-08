@@ -5,9 +5,16 @@ import os
 import time
 import numpy as np
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-DATASET_PATH = r"C:\Users\dasha\KAGGLE_ARC_DATASET.jsonl"
-OUTPUT_DIR = r"C:\Users\dasha\HACKATHON_SUBMISSION\BATCH_RESULTS"
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+
+# Check environment for ASUS network IP broadcast or default to localhost
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "localhost")
+OLLAMA_URL = f"http://{OLLAMA_HOST}:11434/api/generate"
+
+DATASET_PATH = os.environ.get("ARC_DATASET_PATH", str(BASE_DIR / "KAGGLE_ARC_DATASET.jsonl"))
+OUTPUT_DIR = os.environ.get("ARC_OUTPUT_DIR", str(BASE_DIR / "BATCH_RESULTS"))
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 CHAR_MAP = {' ':0, '\u235f':1, '\u238a':2, '\u232c':3, '\u2394':4, '\u1686':5, '\u229a':6, '\u2625':7, '\u1694':8, '\u23e3':9}
@@ -29,15 +36,28 @@ Start your response with \"def transform(input_grid):\" and provide ONLY the cod
     payload = {"model": "gemma4:2b", "prompt": prompt, "stream": False, "options": {"temperature": 0}}
     try:
         r = requests.post(OLLAMA_URL, json=payload, timeout=300)
+        r.raise_for_status()
         return r.json().get("response", "").strip()
-    except: return "ERROR"
+    except requests.exceptions.Timeout:
+        print("[NETWORK] Bounded timeout reached (300s). Node offline.")
+        return "ERROR_TIMEOUT"
+    except requests.exceptions.ConnectionError:
+        print(f"[NETWORK] Cannot reach ASUS endpoint: {OLLAMA_URL}")
+        return "ERROR_CONNECTION"
+    except Exception as e:
+        print(f"[NETWORK] Unhandled exception: {e}")
+        return "ERROR"
 
 def verify(code, input_m, expected_m):
     try:
-        namespace = {}
+        # Bounded execution environment (preventing arbitrary system calls)
+        namespace = {'__builtins__': {}} 
         exec(code, namespace)
+        if 'transform' not in namespace: return False
         return namespace['transform'](input_m) == expected_m
-    except: return False
+    except Exception as e:
+        # Catch and bound all generated syntax errors
+        return False
 
 def run_excavation(limit=100):
     print(f"--- SOVEREIGN EXCAVATION INITIATED: 0 to {limit} ---")

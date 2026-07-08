@@ -516,21 +516,23 @@ controls.enablePan = false;
 
 // ── HUD Updates ──
 function updateHUD(data) {
-  const arc = data.arc;
-  document.getElementById('arc-rate').textContent = `${(arc.rate * 100).toFixed(2)}%`;
-  document.getElementById('arc-solved').textContent = `${arc.solved}/${arc.total}`;
-  document.getElementById('arc-model').textContent = arc.model;
-  document.getElementById('arc-solver').textContent = arc.solver;
-  document.getElementById('arc-latency').textContent = `${arc.latency}ms`;
-  document.getElementById('arc-bar').style.width = `${arc.rate * 100}%`;
+  if (!data) return;
+  const arc = data.arc || {};
+  document.getElementById('arc-rate').textContent = `${((arc.rate ?? 0) * 100).toFixed(2)}%`;
+  document.getElementById('arc-solved').textContent = `${arc.solved ?? 0}/${arc.total ?? 0}`;
+  document.getElementById('arc-model').textContent = arc.model ?? 'Offline';
+  document.getElementById('arc-solver').textContent = arc.solver ?? 'Offline';
+  document.getElementById('arc-latency').textContent = `${arc.latency ?? 0}ms`;
+  document.getElementById('arc-bar').style.width = `${(arc.rate ?? 0) * 100}%`;
 
-  const sys = data.sys;
-  document.getElementById('sys-gpu').textContent = `${sys.gpu}%`;
-  document.getElementById('sys-inference').textContent = `${sys.inference}ms`;
-  document.getElementById('sys-throughput').textContent = `${sys.throughput} tok/s`;
-  document.getElementById('sys-vram').textContent = `${sys.vram.used} GB / ${sys.vram.total} GB`;
-  document.getElementById('sys-pipeline').textContent = sys.pipeline;
-  document.getElementById('sys-sync').textContent = sys.sync;
+  const sys = data.sys || {};
+  document.getElementById('sys-gpu').textContent = `${sys.gpu ?? 0}%`;
+  document.getElementById('sys-inference').textContent = `${sys.inference ?? 0}ms`;
+  document.getElementById('sys-throughput').textContent = `${sys.throughput ?? 0} tok/s`;
+  const vram = sys.vram || { used: 0, total: 0 };
+  document.getElementById('sys-vram').textContent = `${vram.used ?? 0} GB / ${vram.total ?? 0} GB`;
+  document.getElementById('sys-pipeline').textContent = sys.pipeline ?? 'Inactive';
+  document.getElementById('sys-sync').textContent = sys.sync ?? 'Disconnected';
 }
 
 function updateTimeline(entries) {
@@ -572,6 +574,9 @@ async function startDataPipeline() {
           });
           if (d.timeline) updateTimeline(d.timeline);
           if (d.events) updateEventLog(d.events);
+        } else {
+          console.warn('[SRN] Document missing! Bounded fallback triggered to demo data.');
+          useDemoData();
         }
       }, (err) => {
         console.warn('[SRN] Firestore read error, falling back to demo', err);
@@ -632,12 +637,12 @@ function animate() {
     r.rotation.y += 0.0003 * (i + 1) * (i % 2 === 0 ? 1 : -1);
   });
 
-  // Pulse glow
-  const pulse = 0.06 + 0.03 * Math.sin(Date.now() / 2000);
+  // Pulse glow (Clamped to prevent bounding errors)
+  const pulse = Math.max(0.0, Math.min(1.0, 0.06 + 0.03 * Math.sin(Date.now() / 2000)));
   glowMat.opacity = pulse;
 
-  // Particle shimmer
-  particleMat.opacity = 0.3 + 0.15 * Math.sin(Date.now() / 3000);
+  // Particle shimmer (Clamped)
+  particleMat.opacity = Math.max(0.0, Math.min(1.0, 0.3 + 0.15 * Math.sin(Date.now() / 3000)));
 
   controls.update();
   renderer.render(scene, camera);
